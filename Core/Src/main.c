@@ -30,7 +30,6 @@
 #include "task.h"
 #include "at8236.h"
 #include "gx_delay.h"
-#include <inttypes.h>
 
 #include "app_servo.h"
 #include "app_motor.h"
@@ -124,9 +123,8 @@ int main(void)
 
   /*
    * 初始化速度环和位置/角度控制器。
-   * 这里只做参数和状态初始化，不在主循环中强行调用
-   * App_Angle_Pro() 或 App_Position_Pro()，避免覆盖当前工程
-   * 直接使用 Motor_Set_L/Motor_Set_R() 的测试控制方式。
+   * 速度环由 App_Speed_Pro() 周期运行，位置环和角度环需要在
+   * 上层任务需要时再调用，不在这里强行改变目标速度。
    */
   App_Speed_Init();
   App_Motor_Init();
@@ -152,17 +150,13 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
     App_Speed_Pro();//内部已有时间设置
-#if RIGHT_SPEED_AUTO_TEST_ENABLE
-    App_Speed_AutoTest_Pro();
-#endif
     /*
      * 当前主循环只用于右轮速度环调参，左轮由 App_Speed_Pro()
      * 强制停止，不调用位置环或角度环接管电机。
      */
     App_Usart_USB_Process();
-    PERIODIC_START(PEINT_USART,10)
+    PERIODIC_START(PEINT_USART,15)
     float speed_r_raw = App_Encoder_GetLinearSpeed_R();
     App_Usart_USB("R,%.3f,%.3f,%.3f,%.3f\r\n",
                   speed_r_ref,

@@ -29,16 +29,6 @@ void App_Speed_Reset(void);
 //
 void App_Speed_Pro(void);
 
-//
-// @简介：运行右轮自动阶跃测试。
-// @说明：上电后等待 1 秒，依次运行 5、10、15、20、30、36 cm/s，
-//        每级保持 2 秒，
-//        测试结束后自动将目标速度恢复为 0。
-//
-void App_Speed_AutoTest_Pro(void);
-
-
-
 extern volatile float speed_l_measure;//测出的实际速度
 extern volatile float speed_r_measure;
 extern volatile float speed_l_out;//输出占空比

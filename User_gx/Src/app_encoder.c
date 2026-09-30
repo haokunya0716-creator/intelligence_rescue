@@ -61,38 +61,16 @@ float App_Encoder_GetSpeed_L(void) {
     uint64_t t1_l_cpy = t1_l;
 
     __enable_irq();//打开中断
-    if (direction_cpy == 2 || direction_cpy == -2 ||
-        t0_l_cpy == 0U) {
+    if (direction_cpy == 2 || direction_cpy == -2) {
         return 0.0f;
     }else {
         uint64_t now = gx_GetUs();
-        uint64_t since_last_pulse;
-        uint64_t pulse_period = 0U;
-        uint64_t period_us;
-
-        if (now <= t0_l_cpy) {
-            return 0.0f;
+        float T ;
+        if (t0_l_cpy - t1_l_cpy >  now - t0_l_cpy) {
+            T =  (t0_l_cpy - t1_l_cpy) * 1.0e-6f;//注意t的单位是us
+        }else {
+            T =  (now - t0_l_cpy) * 1.0e-6f;
         }
-
-        since_last_pulse = now - t0_l_cpy;
-        if (t1_l_cpy != 0U && t0_l_cpy > t1_l_cpy) {
-            pulse_period = t0_l_cpy - t1_l_cpy;
-        }
-
-        if (since_last_pulse > ENCODER_SPEED_TIMEOUT_US) {
-            return 0.0f;
-        }
-
-        period_us = pulse_period;
-        if (period_us == 0U || period_us > since_last_pulse) {
-            period_us = since_last_pulse;
-        }
-
-        if (period_us == 0U) {
-            return 0.0f;
-        }
-
-        float T = period_us * 1.0e-6f;//注意t的单位是us
         return 1.0 * direction_cpy/ T / ENCODER_TOTAL_RESOLUTION  * 6.2831853f;
     }
 
@@ -108,38 +86,16 @@ float App_Encoder_GetSpeed_R(void) {
     uint64_t t1_r_cpy = t1_r;
 
     __enable_irq();//打开中断
-    if (direction_cpy == 2 || direction_cpy == -2 ||
-        t0_r_cpy == 0U) {
+    if (direction_cpy == 2 || direction_cpy == -2) {
         return 0.0f;
     }else{
         uint64_t now = gx_GetUs();
-        uint64_t since_last_pulse;
-        uint64_t pulse_period = 0U;
-        uint64_t period_us;
-
-        if (now <= t0_r_cpy) {
-            return 0.0f;
+        float T ;
+        if (t0_r_cpy - t1_r_cpy >  now - t0_r_cpy) {
+            T =  (t0_r_cpy - t1_r_cpy) * 1.0e-6f;//注意t的单位是us
+        }else {
+            T =  (now - t0_r_cpy) * 1.0e-6f;
         }
-
-        since_last_pulse = now - t0_r_cpy;
-        if (t1_r_cpy != 0U && t0_r_cpy > t1_r_cpy) {
-            pulse_period = t0_r_cpy - t1_r_cpy;
-        }
-
-        if (since_last_pulse > ENCODER_SPEED_TIMEOUT_US) {
-            return 0.0f;
-        }
-
-        period_us = pulse_period;
-        if (period_us == 0U || period_us > since_last_pulse) {
-            period_us = since_last_pulse;
-        }
-
-        if (period_us == 0U) {
-            return 0.0f;
-        }
-
-        float T = period_us * 1.0e-6f;//注意t的单位是us
         return 1.0 * direction_cpy/ T / ENCODER_TOTAL_RESOLUTION * 6.2831853f;
     }
 
@@ -232,21 +188,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     }
     //右电机
     if (GPIO_Pin == E2A_Pin) {
-        uint64_t now_r = gx_GetUs();
-
-        /*
-         * 右轮 A 相在电机 PWM 期间会出现极短毛刺。
-         * 最高调参目标为 36 cm/s，对应的有效编码器边沿周期
-         * 明显大于 200 us，因此丢弃更短的间隔不会影响目标速度
-         * 范围内的真实脉冲。
-         */
-        if (t0_r != 0U && now_r > t0_r &&
-            now_r - t0_r < RIGHT_ENCODER_MIN_EDGE_INTERVAL_US) {
-            return;
-        }
-
         t1_r = t0_r;//这次的t1是上次的t0
-        t0_r = now_r;
+        t0_r = gx_GetUs();
         GPIO_PinState a_R = HAL_GPIO_ReadPin(E2A_GPIO_Port, E2A_Pin); // A相的当前电压
         GPIO_PinState b_R = HAL_GPIO_ReadPin(E2B_GPIO_Port, E2B_Pin); // B相的当前电压
         if ( (a_R == GPIO_PIN_SET && b_R == GPIO_PIN_RESET) || (a_R == GPIO_PIN_RESET && b_R == GPIO_PIN_SET)) {
