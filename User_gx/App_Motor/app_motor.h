@@ -35,6 +35,7 @@ void App_Angle_Pro(void);
 /* 执行位置环和角度环联合控制。 */
 void App_Position_Pro(void);
 
+
 extern float motor_left_speed;        // 左电机速度环目标值，单位：cm/s
 extern float motor_right_speed;       // 右电机速度环目标值，单位：cm/s
 
@@ -49,6 +50,9 @@ extern float position_mid_ref;        // 位置环目标距离，单位：cm
 extern float angle_yaw;               // 当前偏航角，单位：度，顺时针为正
 extern float angle_yaw_ref;           // 角度环目标偏航角，单位：度，顺时针为正
 extern float angle_yaw_target;        // 调参时保存的绝对目标角度，单位：度
+
+extern float angle_yaw_omega;               // 陀螺仪实际角速度  °/s
+extern float angle_yaw_omega_ref;           // 目标角速度
 
 extern float motor_base_speed;        // 位置环输出的基础速度，单位：cm/s
 extern float motor_turn_speed;        // 角度环输出的转向修正速度，单位：cm/s

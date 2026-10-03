@@ -25,16 +25,18 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "app_button.h"
 #include "app_encoder.h"
 #include "app_usart.h"
 #include "task.h"
-#include "at8236.h"
+#include "drv8701.h"
 #include "gx_delay.h"
 
 #include "app_servo.h"
 #include "app_motor.h"
 #include "app_speed.h"
 #include "JY901S.h"
+#include "rescue_usart2.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -43,7 +45,6 @@
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
-#define RIGHT_SPEED_AUTO_TEST_ENABLE 1U
 /* USER CODE BEGIN PD */
 
 /* USER CODE END PD */
@@ -63,6 +64,7 @@ uint8_t rx_byte_imu;   // 串口6接收陀螺仪数据
 float duty_l = 0;
 float duty_r = 0;
 float angle_servo = 0;
+int key1_flag = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -111,26 +113,26 @@ int main(void)
   MX_TIM2_Init();
   MX_USART6_UART_Init();
   MX_TIM3_Init();
+  MX_USART2_UART_Init();
+  MX_USART3_UART_Init();
+  MX_TIM5_Init();
+  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
 
   /*
-   * 所有定时器初始化完成后，启动 AT8236 的四路 PWM。
+   * 所有定时器和 GPIO 初始化完成后，启动 DRV8701E 的两路 EN PWM。
    * Motor_Init() 会先写入停止值，避免上电初始化过程中产生
    * 意外的电机动作。
    */
   Motor_Init();
   Motor_Cmd(1);
 
-  /*
-   * 初始化速度环和位置/角度控制器。
-   * 速度环由 App_Speed_Pro() 周期运行，位置环和角度环需要在
-   * 上层任务需要时再调用，不在这里强行改变目标速度。
-   */
+  /* 协议服务按收到的命令选择速度闭环或偏航角闭环。 */
   App_Speed_Init();
   App_Motor_Init();
 
   App_Servo_init();//初始化舵机
-  HAL_UART_Receive_IT(&huart6, &rx_byte_imu, 1);//陀螺仪接收初始化
+  HAL_UART_Receive_IT(&huart3, &rx_byte_imu, 1);//陀螺仪接收初始化
 
   /*
    * TIM1 以 1 MHz 计数并开启更新中断，供 gx_GetUs() 提供
@@ -143,6 +145,11 @@ int main(void)
    */
 
   HAL_TIM_Base_Start_IT(&htim1);
+  if (Rescue_Usart2_Start() == 0U) {
+    Error_Handler();
+  }
+  App_USART1_Printf("start!\n");
+
 
   /* USER CODE END 2 */
 
@@ -150,36 +157,37 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    App_Speed_Pro();//内部已有时间设置
-    /*
-     * 当前主循环只用于右轮速度环调参，左轮由 App_Speed_Pro()
-     * 强制停止，不调用位置环或角度环接管电机。
-     */
-    App_Usart_USB_Process();
-    PERIODIC_START(PEINT_USART,15)
-    float speed_r_raw = App_Encoder_GetLinearSpeed_R();
-    App_Usart_USB("R,%.3f,%.3f,%.3f,%.3f\r\n",
-                  speed_r_ref,
-                  speed_r_measure,
-                  speed_r_out,
-                  speed_r_raw);
-    // App_USART1_Printf("R,%.3f,%.3f,%.3f,%.3f\r\n",
-    //                   speed_r_ref,
-    //                   speed_r_measure,
-    //                   speed_r_out,
-    //                   speed_r_raw);
-    //App_USART1_Printf("%f\n\r", time_ms);
-    //App_USART1_Printf("%f,%f\n", encoder_L,encoder_R);
-    //App_USART1_Printf("%f,%f\n",encoder_l_pos,encoder_r_pos);
-    //App_USART1_Printf("%f,%f,%f\n",yawAngle,pinchAngle,rollAngle);
-     // App_USART1_Printf("%d\n",
-     //                  encoder_R);
-    // App_USART1_Printf("%d\n",
-    //                   encoder_L);
-    //App_USART1_Printf("%.3f,%.3f\n", pos_l,pos_r);
-
-    //App_Servo_SetAngle(angle_servo);//舵机可以正常使用
+    if (key1_flag == 1) {
+      /*
+       * 这里来放开始的时候要执行的代码
+       */
+      key1_flag = 0;
+    }
+    //App_Usart_USB_Process();
+    PERIODIC_START(KEY_DETECT,20)
+    App_Button_Proc();
     PERIODIC_END
+    PERIODIC_START(PEINT_USART,100)
+    HAL_GPIO_TogglePin(GPIOE, GPIO_PIN_14);
+    PERIODIC_END
+
+
+    /* 处理 USART2 命令，并运行当前命令选中的速度环或角度环。 */
+    Rescue_Usart2_Process();
+    // PERIODIC_START(PEINT_USART,15)
+    // App_USART1_Printf("%.3f,%.3f\n",
+    //                   angle_yaw_omega_ref,
+    //                   angle_yaw_omega);
+
+    // Motor_Set_L(duty_l);
+    // Motor_Set_R(duty_l);
+    // App_USART1_Printf("%.3f\n",
+    //                  gyroZRate);
+
+    // App_USART1_Printf("%.3f,%.3f\n",
+    //                   encoder_l_pos,
+    //                   encoder_r_pos);
+    //PERIODIC_END
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -235,9 +243,13 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-  if (huart->Instance == USART6) {
+  if (huart->Instance == USART3) {
     IMU_PutByte(rx_byte_imu);
-    HAL_UART_Receive_IT(&huart6, &rx_byte_imu, 1);
+    HAL_UART_Receive_IT(&huart3, &rx_byte_imu, 1);
+  } else if (huart->Instance == USART2) {
+    /* USART2 的组帧和缓存由协议模块负责；这里不执行电机或舵机动作。 */
+    extern void Rescue_Usart2_RxCallback(void);
+    Rescue_Usart2_RxCallback();
   }
 }
 /* USER CODE END 4 */

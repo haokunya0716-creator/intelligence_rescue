@@ -1,6 +1,6 @@
 #include "app_speed.h"
 #include "app_encoder.h"
-#include "at8236.h"
+#include "drv8701.h"
 #include "pid.h"
 #include "task.h"
 
@@ -74,10 +74,10 @@ void App_Motor_Data_Update(void){
 void App_Speed_Init(void)
 {
     PID_Init(&pid_speed_l,2.7f, 0.0f, 0.0f);
-    PID_LimitConfig(&pid_speed_l, 70.0f, -70.0f);
+    PID_LimitConfig(&pid_speed_l, 60.0f, -60.0f);
 
     PID_Init(&pid_speed_r, 2.7f, 0.0f, 0.0f);
-    PID_LimitConfig(&pid_speed_r, 70.0f, -70.0f);
+    PID_LimitConfig(&pid_speed_r, 60.0f, -60.0f);
 
 
 }
@@ -123,7 +123,7 @@ void App_Speed_Reset(void)
 // @简介：速度闭环周期处理。
 // @说明：
 // 1. 需要放在 while(1) 中一直调用，内部按 tick_ms 控制 20ms 运行一次。
-// 2. 每次运行先读编码器速度，再用 PID 算占空比，最后输出给 AT8236。
+// 2. 每次运行先读编码器速度，再用 PID 算占空比，最后输出给 DRV8701E。
 // 3. Motor_Set_L() 内部已经处理左电机硬件方向反向，这里不再额外改符号。
 //
 void App_Speed_Pro(void)
@@ -152,8 +152,6 @@ void App_Speed_Pro(void)
 		Motor_Set_R(speed_r_out + KF_R * speed_r_ref);
 
 	}
-
-
 
 	PERIODIC_END
 

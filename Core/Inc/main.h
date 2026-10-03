@@ -57,26 +57,26 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define BIN2_Pin GPIO_PIN_0
-#define BIN2_GPIO_Port GPIOA
-#define AIN1_Pin GPIO_PIN_3
-#define AIN1_GPIO_Port GPIOA
-#define E1A_Pin GPIO_PIN_6
-#define E1A_GPIO_Port GPIOA
-#define E1A_EXTI_IRQn EXTI9_5_IRQn
-#define E1B_Pin GPIO_PIN_7
-#define E1B_GPIO_Port GPIOA
-#define E1B_EXTI_IRQn EXTI9_5_IRQn
-#define E2B_Pin GPIO_PIN_0
+#define E1B_Pin GPIO_PIN_12
+#define E1B_GPIO_Port GPIOB
+#define E1B_EXTI_IRQn EXTI15_10_IRQn
+#define E1A_Pin GPIO_PIN_13
+#define E1A_GPIO_Port GPIOB
+#define E1A_EXTI_IRQn EXTI15_10_IRQn
+#define E2B_Pin GPIO_PIN_14
 #define E2B_GPIO_Port GPIOB
-#define E2B_EXTI_IRQn EXTI0_IRQn
-#define E2A_Pin GPIO_PIN_1
+#define E2B_EXTI_IRQn EXTI15_10_IRQn
+#define E2A_Pin GPIO_PIN_15
 #define E2A_GPIO_Port GPIOB
-#define E2A_EXTI_IRQn EXTI1_IRQn
-#define AIN2_Pin GPIO_PIN_10
-#define AIN2_GPIO_Port GPIOB
-#define BIN1_Pin GPIO_PIN_3
-#define BIN1_GPIO_Port GPIOB
+#define E2A_EXTI_IRQn EXTI15_10_IRQn
+#define PH_1_IN_Pin GPIO_PIN_9
+#define PH_1_IN_GPIO_Port GPIOD
+#define PH_2_IN_Pin GPIO_PIN_10
+#define PH_2_IN_GPIO_Port GPIOD
+#define KEY3_Pin GPIO_PIN_9
+#define KEY3_GPIO_Port GPIOC
+#define KEY2_Pin GPIO_PIN_11
+#define KEY2_GPIO_Port GPIOC
 
 /* USER CODE BEGIN Private defines */
 

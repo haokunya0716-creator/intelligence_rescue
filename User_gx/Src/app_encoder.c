@@ -5,14 +5,14 @@
 #include "../Inc/app_encoder.h"
 #include "../Inc/gx_delay.h"
 
-#define E1A_Pin GPIO_PIN_6
-#define E1A_GPIO_Port GPIOA
-#define E1B_Pin GPIO_PIN_7
-#define E1B_GPIO_Port GPIOA
+#define E1A_Pin GPIO_PIN_13
+#define E1A_GPIO_Port GPIOB
+#define E1B_Pin GPIO_PIN_12
+#define E1B_GPIO_Port GPIOB
 
-#define E2A_Pin GPIO_PIN_1
+#define E2A_Pin GPIO_PIN_15
 #define E2A_GPIO_Port GPIOB
-#define E2B_Pin GPIO_PIN_0
+#define E2B_Pin GPIO_PIN_14
 #define E2B_GPIO_Port GPIOB
 
 static volatile int64_t encoder_L = 0;//代表电机旋转角度，64位防止溢出，同时带符号（因为有正反转）

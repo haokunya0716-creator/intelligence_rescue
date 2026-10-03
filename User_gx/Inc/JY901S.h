@@ -9,7 +9,9 @@
  *
  * 变量说明：
  *  - IMU_rawRoll / IMU_rawPinch / IMU_rawYaw : 原始有符号 16-bit 值（int16_t）
+ *  - IMU_rawGyroZ : Z 轴角速度原始有符号 16-bit 值（int16_t）
  *  - rollAngle / pinchAngle / yawAngle : 对应角度，单位：度（float）
+ *  - gyroZRate : Z 轴角速度，单位：度/秒（float）
  *  - IMU_buffer / IMU_bufferIdx : 内部接收缓冲（volatile，因为在中断回调函数内会修改）
  *
  * 函数：
@@ -22,10 +24,12 @@
 extern volatile int16_t IMU_rawRoll;
 extern volatile int16_t IMU_rawPinch;
 extern volatile int16_t IMU_rawYaw;
+extern volatile int16_t IMU_rawGyroZ;
 
 extern volatile float rollAngle;
 extern volatile float pinchAngle;
 extern volatile float yawAngle;
+extern volatile float gyroZRate;
 
 extern volatile uint8_t IMU_buffer[12];
 extern volatile uint8_t IMU_bufferIdx;
@@ -38,6 +42,8 @@ uint8_t IMU_CheckSum(const uint8_t *buf);
 
 /* 任务安全读取当前角度的快照（在短临界区复制） */
 void IMU_GetAnglesSnapshot(float *out_roll, float *out_pinch, float *out_yaw);
+/* 任务安全读取 Z 轴角速度，单位：度/秒 */
+void IMU_GetGyroZSnapshot(float *out_gyro_z);
 /* 角度零点校准 */
 void IMU_CalibrateOffset(void);
 

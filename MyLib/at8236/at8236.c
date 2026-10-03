@@ -1,8 +1,9 @@
+#if 0 /* AT8236 implementation kept for reference; DRV8701 is used now. */
 //
 // Created by gaoxu on 2026/9/19.
 //
 
-#include "at8236.h"
+#include "drv8701.h" /* 旧实现已禁用，仅保留文本参考。 */
 #include "tim.h"
 
 /*
@@ -30,6 +31,7 @@
 #define MOTOR_TIMER_HANDLE    (&htim2)
 #define MOTOR_BIN2_CHANNEL    TIM_CHANNEL_1
 #define MOTOR_BIN1_CHANNEL    TIM_CHANNEL_2
+
 #define MOTOR_AIN2_CHANNEL    TIM_CHANNEL_3
 #define MOTOR_AIN1_CHANNEL    TIM_CHANNEL_4
 
@@ -415,3 +417,4 @@ void Motor_Set_R(float duty)
         Motor_Stop_R();
     }
 }
+#endif /* AT8236 reference code */

@@ -8,10 +8,12 @@
 volatile int16_t IMU_rawRoll = 0;
 volatile int16_t IMU_rawPinch = 0;
 volatile int16_t IMU_rawYaw = 0;
+volatile int16_t IMU_rawGyroZ = 0;
 
 volatile float rollAngle = 0.0f;
 volatile float pinchAngle = 0.0f;
 volatile float yawAngle = 0.0f;
+volatile float gyroZRate = 0.0f;
 
 volatile uint8_t IMU_buffer[12];
 volatile uint8_t IMU_bufferIdx = 0;
@@ -54,6 +56,16 @@ static void IMU_SaveBuffer(const uint8_t *buf)
     yawAngle = (float)rawYaw / 32768.0f * 180.0f;
 }
 
+/* 内部：解析角速度帧的 Z 轴原始值（小端在前） */
+static void IMU_SaveGyroBuffer(const uint8_t *buf)
+{
+    int16_t rawGyroZ = (int16_t)(((uint16_t)buf[6]) | ((uint16_t)buf[7] << 8));
+
+    IMU_rawGyroZ = rawGyroZ;
+    /* JY901S 角速度量程为 +/-2000°/s，输出单位为 °/s */
+    gyroZRate = (float)rawGyroZ / 32768.0f * 2000.0f;
+}
+
 /* 计算校验：对 buf[0..9]这10个字节 求和并返回低 8 位 */
 uint8_t IMU_CheckSum(const uint8_t *buf)
 {
@@ -82,12 +94,12 @@ void IMU_PutByte(uint8_t byte)
             IMU_bufferIdx = 0u;
         }
     } else if (IMU_bufferIdx == 1u) {
-        /* 0x53 是角度帧标识 */
-        if (byte == 0x53u) {
+        /* 0x52 是角速度帧，0x53 是角度帧 */
+        if (byte == 0x52u || byte == 0x53u) {
             IMU_buffer[IMU_bufferIdx] = byte;
             IMU_bufferIdx = 2u;
         } else {
-            /* 非角度帧：重同步（可按需扩展支持其它帧ID） */
+            /* 非目标帧：重同步 */
             IMU_bufferIdx = 0u;
         }
     } else if (IMU_bufferIdx < 10u) {
@@ -96,7 +108,11 @@ void IMU_PutByte(uint8_t byte)
     } else if (IMU_bufferIdx == 10u) {
         /* 当前位置接收到校验字节 */
         if (byte == IMU_CheckSum((const uint8_t *)IMU_buffer)) {
-            IMU_SaveBuffer((const uint8_t *)IMU_buffer);//把IMU_buffer前10个字节解析并保存到全局变量中
+            if (IMU_buffer[1] == 0x52u) {
+                IMU_SaveGyroBuffer((const uint8_t *)IMU_buffer);
+            } else {
+                IMU_SaveBuffer((const uint8_t *)IMU_buffer);//把IMU_buffer前10个字节解析并保存到全局变量中
+            }
           //  App_USART6_Printf("yaw=%.2f\n", yawAngle);   // hyf添加调试信息。打印当前yaw角
         }
         /* 无论校验结果如何，都重置以等待下一个帧 */
@@ -122,6 +138,14 @@ void IMU_GetAnglesSnapshot(float *out_roll, float *out_pinch, float *out_yaw)
     if (out_yaw != NULL) *out_yaw = yawAngle;
     __enable_irq();//hyf！在 Angle_Turn 中调用 IMU_GetAnglesSnapshot(NULL, NULL, &current) 时，由于前两个指针为 NULL，而该函数要求三个指针都不能为 NULL，导致函数直接返回，current 没有被赋值，所以一直为 0。
     //解决方法：修改 IMU_GetAnglesSnapshot 函数，允许部分指针为 NULL。
+}
+
+/* 任务安全读取 Z 轴角速度，单位：°/s */
+void IMU_GetGyroZSnapshot(float *out_gyro_z)
+{
+    __disable_irq();
+    if (out_gyro_z != NULL) *out_gyro_z = gyroZRate;
+    __enable_irq();
 }
 
 void IMU_GetAnglesCalibrated(float *out_roll, float *out_pinch, float *out_yaw)

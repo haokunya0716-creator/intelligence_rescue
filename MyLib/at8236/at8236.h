@@ -1,3 +1,4 @@
+#if 0 /* AT8236 implementation kept for reference; DRV8701 is used now. */
 #ifndef AT8236_H
 #define AT8236_H
 
@@ -60,3 +61,4 @@ void Motor_Stop_R(void);
 void Motor_Stop(void);
 
 #endif
+#endif /* AT8236 reference code */

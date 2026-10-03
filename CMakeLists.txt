@@ -33,7 +33,8 @@ enable_language(C ASM)
 
 # Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME}
-
+        MyLib/DRV8701/drv8701.c
+        MyLib/DRV8701/drv8701.h
 
 
 )
@@ -61,9 +62,6 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         MyLib/Src/qmath.c
         MyLib/Src/si2c.c
 
-        MyLib/at8236/at8236.c
-        MyLib/at8236/at8236.h
-
         User_gx/Inc/app_button.h
         User_gx/Inc/app_encoder.h
         User_gx/Inc/app_pwm.h
@@ -87,6 +85,9 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 
         User_gx/App_servo/app_servo.c
         User_gx/App_servo/app_servo.h
+
+        User_gx/App_Protocol/rescue_protocol.c
+        User_gx/App_Protocol/rescue_usart2.c
 )
 
 # Add include paths
@@ -97,10 +98,11 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         User_gx/Src
         User_gx/App_Motor
         User_gx/App_servo
+        User_gx/App_Protocol
         MyLib
         MyLib/Inc
         MyLib/Src
-        MyLib/at8236
+        MyLib/DRV8701
 )
 
 # Add project symbols (macros)

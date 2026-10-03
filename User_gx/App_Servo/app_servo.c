@@ -16,13 +16,13 @@ static uint32_t Servo_angle_Compute(float angle_target);
 //
 //@brief: 初始化函数
 void App_Servo_init(void) {
-    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
+    HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_2);
     App_Servo_SetAngle(0.0f);
 }
 
 void App_Servo_SetAngle(float angle) {
     uint32_t ccr = Servo_angle_Compute(angle);
-    __HAL_TIM_SET_COMPARE(&htim3,TIM_CHANNEL_2,ccr);
+    __HAL_TIM_SET_COMPARE(&htim5,TIM_CHANNEL_2,ccr);
 }
 
 static uint32_t Servo_angle_Compute(float angle_target) {
